@@ -1,267 +1,324 @@
+#trying to use OOP
+#UNO game
+
+
+#imports
 import time
 import random
 
-colours = ["green", "red", "blue", "yellow"]
-rare_cards = ["colour_change"]
-normal_cards = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-current_card = None
-current_colour = None
-possible_card = None
-lp = ""
 
+class Card:
+    #the two arrays for cards
+    player_cards = []
+    bot_cards = []
 
-def typeout(text, delay=0.01):
-    for l in text:
-        print(l, end="", flush=True)
-        time.sleep(delay)
-    print()
-
-
-
-def bot_starts():
-    global current_card, current_colour
-    which = random.choice(bot_cards)
-
-    for i in range(len(bot_cards)):
-        if bot_cards[i] == which and bot_cards[i] not in rare_cards:
-            print("-------------------------------")
-            print("The bot puts down", bot_cards[i], bot_colours[i])
-            current_card = bot_cards[i]
-            current_colour = bot_colours[i]
-            bot_cards.pop(i)
-            bot_colours.pop(i)
-            print("-------------------------------")
-            break
+    #general
+    colours = ["green", "red", "blue", "yellow"]
+    rare_cards = ["colour_change"]
+    normal_cards = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
     
+    def __init__ (self, number, colour: str, owner: str):
 
-def player_starts():
-    global current_card, current_colour
-    while True:
-        print("-------------------------------")
-        print("What card do you want to put down?")
-        which = input().strip().split()
-
-        found = False
-
-        for i in range(len(player_cards)):
-            if player_cards[i] == which[0] and player_colours[i] == which[-1]:
-                print("You have put down", player_cards[i], player_colours[i])
-                found = True
-                current_card = player_cards[i]
-                current_colour = player_colours[i]
-                player_cards.pop(i)
-                player_colours.pop(i)
-                print("-------------------------------")
-                break
-
-        if found:
-            break
-        else:
-            print("Try again")
-            print("-------------------------------")
-
-    print("Your cards are now", len(player_cards))
-    
-    for i in range(len(player_cards)):
-        print(player_cards[i], player_colours[i])
-
-    
-
-
-def check(card_val, card_col):  
-    global allowed, current_card, current_colour
-    
-    if card_val == current_card or card_col == current_colour or card_col == "special!":
-        allowed = True
-    else:
-        allowed = False
+        #errors
+        if number != "colour_change":
+            assert number >= 1 and number <= 9, f"Your number ({number}) has to be between 1 and 9"
         
-    return allowed
+        if colour != "special!":
+            assert colour in self.colours, f"Your colour ({colour}) has to be a real colour or special"
+            
+        assert owner in ("bot", "player"), f"Your player ({owner}) has to be either bot or player"
+
+        #variables
+        self.number = number
+        self.colour = colour
+        self.owner = owner
+
+        #owner appending
+        if owner == "player":
+            Card.player_cards.append(self)
+
+        else:
+            Card.bot_cards.append(self)
 
 
 
+        
+    def playable(self, current_card, current_colour):
+        
+        #is it playable?
+        if current_card is None or self.number == current_card.number or self.colour == current_colour or self.colour == "special!":
+             return True
 
-
-
-def play(who):
-    global current_card, current_colour, lp, player_cards, player_colours, bot_cards, bot_colours
+        else:
+            return False
     
-    while len(player_cards) != 0 and len(bot_cards) != 0:
-        if lp == "bot":
+
+
+    def __repr__ (self):
+        #stores each object readably
+        return f"{self.number} {self.colour}"
+
+
+
+
+
+
+class Game:
+
+    def __init__(self):
+        self.current_card = None
+        self.current_colour = None
+        self.lp = None
+
+    def __repr__(self):
+        return f"The current colour is {self.current_colour} and the current card is {self.current_card}"
+
+
+    def typeout(self, text, delay=0.01):
+        for letter in text:
+            print(letter, end="", flush=True)
+            time.sleep(delay)
+        print()
+
+
+    def show_player_cards(self):
+        print(f"These are your {len(Card.player_cards)} cards:")
+        print()
+
+        for card in Card.player_cards:
+            print(card)
+
+        print()
+        print("Or 'pass' to gain a new card.")
+
+    def generate_card(self, user):
+        number = random.choice(Card.normal_cards)
+        colour = random.choice(Card.colours)
+
+        if number >= 10:
+            number = "colour_change"
+            colour = "special!"
+
+        Card(number, colour, user)
+
+
+    def bot_starts(self):
+        i = random.randrange(len(Card.bot_cards))
+
+        self.current_card = Card.bot_cards[i]
+
+        if self.current_card.colour == "special!":
+            self.current_colour = random.choice(Card.colours)
+            
+        else:
+            self.current_colour = self.current_card.colour
+
+
+        print("-------------------------------")
+
+        if self.current_card.colour == "special!":
+            print("The bot puts down", self.current_card, "and chooses", self.current_colour)
+        
+        else:
+            print("The bot puts down", self.current_card)
+
+        print("-------------------------------")
+
+        Card.bot_cards.pop(i)
+        self.lp = "bot"
+
+    def player_starts(self):
+        while True:
             print("-------------------------------")
             print("What card do you want to put down?")
-            possible_card = input().strip().split()
-        
-            for i in range(len(player_cards)):
-                if player_cards[i] == possible_card[0] and player_colours[i] == possible_card[-1]:
-                    check(player_cards[i], player_colours[i])
+            which = input().strip().split()
 
-                        
-                    if allowed == True:
-                        if player_colours[i] == "special":
-                            print("What colour do you choose?")
-                            current_colour = str(input())
+            if len(which) < 2:
+                print("Try again")
+                continue
 
-                            while current_colour not in colours:
-                                print("Try again")
+            found = False
 
-                            found = True
-                            current_colour = player_colours[i]
-                            player_cards.pop(i)
-                            player_colours.pop(i)
-                            lp = "player"
-                            break
+            for i in range(len(Card.player_cards)):
+                card = Card.player_cards[i]
 
+                if str(card.number) == which[0] and card.colour == which[-1].lower():
+                    self.current_card = card
 
-                        print("You have put down", player_cards[i], player_colours[i])
-                        found = True
-                        current_card = player_cards[i]
-                        current_colour = player_colours[i]
-                        player_cards.pop(i)
-                        player_colours.pop(i)
-                        lp = "player"
-                        break
+                    if card.colour == "special!":
+                        print("What colour do you choose?")
+                        self.current_colour = input().strip().lower()
+
+                        while self.current_colour not in Card.colours:
+                            print("Try again")
+                            self.current_colour = input().strip().lower()
 
                     else:
-                        print("Try again")
+                        self.current_colour = card.colour
 
-            print("-------------------------------")
-            print("Your cards are now", len(player_cards))
+                    print("You put down", self.current_card)
 
-            for i in range(len(player_cards)):
-                print(player_cards[i], player_colours[i])
-
-            print("-------------------------------")
-
-
-
-
-        elif lp == "player":
-            possible_choices = []
-            
-            for i in range(len(bot_cards)):
-                check(bot_cards[i], bot_colours[i])
-
-                if allowed == True:
-                    possible_choices.append(bot_cards[i])
-    
-            choice = random.choice(possible_choices)
-
-            for i in range(len(bot_cards)):
-                if bot_cards[i] == choice:
-                    if bot_colours[i] == "special":
-                        current_colour = rando.choice(colours)
-                        current_card = bot_cards[i]
-                        bot_cards.pop(i)
-                        bot_colours.pop(i)
-                        lp = "bot"
-                        break
-                            
-                    print("-------------------------------")
-                    print("The bot puts down", bot_cards[i], bot_colours[i])
-                    current_card = bot_cards[i]
-                    current_colour = bot_colours[i]
-                    bot_cards.pop(i)
-                    bot_colours.pop(i)
-                    lp = "bot"
+                    Card.player_cards.pop(i)
+                    found = True
                     break
 
-                else:
+            if found:
+                break
+    
+            else:
+                print("Try again - note that you cannot pass")
+
+
+    def play(self):
+        
+        while True:
+            if self.lp == "bot":
+                print(f"What card do you want to put down?  (Current Card: {self.current_card}, Current Colour: {self.current_colour})")
+                possible_card = input().strip().split()
+                print("-------------------------------")
+
+                if possible_card and possible_card[0].lower() == "pass": 
+                    self.generate_card("player")
+                    print("Your new card is", Card.player_cards[-1])
+                    self.lp = "player"
+                    break
+
+                if len(possible_card) < 2:
+                    print("Try again")
                     print("-------------------------------")
-                    print("The bot passes")
-                    lp = "bot"
-                    break 
+                    continue
+
+                found = False
+                for i in range(len(Card.player_cards)):
+                    
+                    card = Card.player_cards[i]
+
+                    if str(card.number) == possible_card[0] and card.colour == possible_card[1]:
+
+                        if Card.player_cards[i].playable(self.current_card, self.current_colour):
+                            
+                            if Card.player_cards[i].colour == "special!":
+                                print("What colour do you choose?")
+                                self.current_colour = str(input()).strip().lower()
+
+                                while self.current_colour not in Card.colours:
+                                    print("Try again")
+                                    self.current_colour = str(input()).strip().lower()
 
 
-typeout("Hello, this is UNO made by dario!")
+                                self.current_card = Card.player_cards[i]
+                                print("You put down", self.current_card, "and chose", self.current_colour)
+                                print("-------------------------------")
+                                found = True
+                                Card.player_cards.pop(i)
+                                self.lp = "player"
+                                break
+
+                            print("You have put down", Card.player_cards[i])
+                            print("-------------------------------")
+                            found = True
+                            self.current_card = Card.player_cards[i]
+                            self.current_colour = Card.player_cards[i].colour
+                            Card.player_cards.pop(i)
+                            self.lp = "player"
+                            break
+
+                if not found:
+                    print("Try again")
+
+                self.show_player_cards()
+                
+                if not Card.player_cards:
+                    break
+
+
+
+
+            elif self.lp == "player":
+                possible_choices = []
+                
+                for i in range(len(Card.bot_cards)):
+                    Card.bot_cards[i].playable(self.current_card, self.current_colour)
+
+                    if Card.bot_cards[i].playable(self.current_card, self.current_colour):
+                        possible_choices.append(i)
+
+
+                if len(possible_choices) == 0:
+                    print("-------------------------------")
+                    print("The bot passed and gained a card")
+                    print("-------------------------------")  
+                    self.generate_card("bot")	 
+                    self.lp = "bot"
+                    break
+        
+                choice = random.choice(possible_choices)
+
+                if Card.bot_cards[choice].colour == "special!":
+                    self.current_colour = random.choice(Card.colours)
+                    self.current_card = Card.bot_cards[choice]
+                    print("-------------------------------")
+                    print("The bot puts down", self.current_card, "and chooses", self.current_colour)
+                    print("-------------------------------")  
+                    Card.bot_cards.pop(choice)
+                    self.lp = "bot"
+                    break
+
+                print("-------------------------------")  
+                print("The bot puts down", Card.bot_cards[choice])
+                print("-------------------------------")  
+                self.current_card = Card.bot_cards[choice]
+                self.current_colour = Card.bot_cards[choice].colour
+                Card.bot_cards.pop(choice)
+                self.lp = "bot"
+                break
+
+
+
+game = Game()
+
+
+#that's me!
+game.typeout("Hello, this is UNO made by dario!")
 print("-------------------------------")
-typeout("Here are your cards!")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# assign cards to player
-
-player_cards = []
+#generate cards
+for loop in range(7):
+    game.generate_card("player")
 
 for loop in range(7):
-    r = random.choice(normal_cards)
-    player_cards.append(r)
-
-for i in range(len(player_cards)):
-    if player_cards[i] in ("10", "11", "12"):
-        player_cards[i] = random.choice(rare_cards)
-
-player_colours = []
-
-for loop in range(7):
-    r = random.choice(colours)
-    player_colours.append(r)
-
-for i in range(len(player_cards)):
-    if player_cards[i] in rare_cards:
-        player_colours[i] = "special!"
-
-    print(player_cards[i], player_colours[i])
-
-# assign cards to bot
-
-bot_cards = []
-
-for loop in range(7):
-    r = random.choice(normal_cards)
-    bot_cards.append(r)
-
-for i in range(len(bot_cards)):
-    if bot_cards[i] in ("10", "11", "12"):
-        bot_cards[i] = random.choice(rare_cards)
-
-bot_colours = []
-
-for loop in range(7):
-    r = random.choice(colours)
-    bot_colours.append(r)
-
-for i in range(len(bot_cards)):
-    if bot_cards[i] in rare_cards:
-        bot_colours[i] = "special!"
-
-# gameplay
+    game.generate_card("bot")
 
 
+#display cards
+game.show_player_cards()
+
+#chooses who starts
 starting = ["player", "bot"]
 starts = random.choice(starting)
-print("-------------------------------")
-typeout(f"the {starts} is starting!")
+game.typeout(f"the {starts} is starting!")
 
+
+#uses correct function depending
 if starts == "bot":
-    bot_starts()
-    lp = "bot"
+    game.bot_starts()
+    game.lp = "bot"
 
 else:
-    player_starts()
-    lp = "player"
-
-play(lp)
+    game.player_starts()
+    game.lp = "player"
 
 
+
+while len(Card.player_cards) != 0 and len(Card.bot_cards) != 0:
+    game.play()
+
+if len(Card.player_cards) == 0:
+    print("-------------------------------")
+    print("You win!")
+else:
+    print("-------------------------------")
+    print("The bot wins!")
+
+    
