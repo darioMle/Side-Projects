@@ -1,5 +1,5 @@
-#trying to use OOP
-#UNO game
+#trying to use OOP for my first project
+#simple UNO game
 
 
 #imports
@@ -67,15 +67,19 @@ class Card:
 class Game:
 
     def __init__(self):
+        #variables
         self.current_card = None
         self.current_colour = None
         self.lp = None
 
+
     def __repr__(self):
+        #stores it like this
         return f"The current colour is {self.current_colour} and the current card is {self.current_card}"
 
 
     def typeout(self, text, delay=0.01):
+        #to type out text (cool)
         for letter in text:
             print(letter, end="", flush=True)
             time.sleep(delay)
@@ -83,6 +87,8 @@ class Game:
 
 
     def show_player_cards(self):
+        #print current player cards to the screen 
+
         print(f"These are your {len(Card.player_cards)} cards:")
         print()
 
@@ -92,30 +98,36 @@ class Game:
         print()
         print("Or 'pass' to gain a new card.")
 
+
     def generate_card(self, user):
+        #make a new card
+
         number = random.choice(Card.normal_cards)
         colour = random.choice(Card.colours)
 
-        if number >= 10:
+        if number >= 10: #I did this to make sure there are SOME specials and this adds them
             number = "colour_change"
             colour = "special!"
 
+        #stores card
         Card(number, colour, user)
 
 
     def bot_starts(self):
-        i = random.randrange(len(Card.bot_cards))
+        i = random.randrange(len(Card.bot_cards)) #choose a random index from the list
 
         self.current_card = Card.bot_cards[i]
 
         if self.current_card.colour == "special!":
-            self.current_colour = random.choice(Card.colours)
+            self.current_colour = random.choice(Card.colours) #if it is special then it does a random colour
             
         else:
             self.current_colour = self.current_card.colour
 
 
         print("-------------------------------")
+
+        #displays for the user
 
         if self.current_card.colour == "special!":
             print("The bot puts down", self.current_card, "and chooses", self.current_colour)
@@ -125,46 +137,49 @@ class Game:
 
         print("-------------------------------")
 
-        Card.bot_cards.pop(i)
-        self.lp = "bot"
+        Card.bot_cards.pop(i) #deletes the index (card) completely from the list
+        self.lp = "bot" #last played was bot
 
     def player_starts(self):
         while True:
+            #if player starts
             print("-------------------------------")
             print("What card do you want to put down?")
             which = input().strip().split()
 
-            if len(which) < 2:
+            if len(which) < 2: #if the input is smaller than 2
                 print("Try again")
                 continue
 
-            found = False
+            found = False #(if the card is found)
 
             for i in range(len(Card.player_cards)):
-                card = Card.player_cards[i]
+                card = Card.player_cards[i] #to simplify
 
                 if str(card.number) == which[0] and card.colour == which[-1].lower():
-                    self.current_card = card
+                    self.current_card = card #if the card matches with your deck it assigns it
 
                     if card.colour == "special!":
                         print("What colour do you choose?")
-                        self.current_colour = input().strip().lower()
+                        self.current_colour = input().strip().lower() #if the card is special you get to input the new colour
 
                         while self.current_colour not in Card.colours:
+                            #while the colour is wrong
                             print("Try again")
                             self.current_colour = input().strip().lower()
+
 
                     else:
                         self.current_colour = card.colour
 
                     print("You put down", self.current_card)
 
-                    Card.player_cards.pop(i)
+                    Card.player_cards.pop(i) #deletes from list
                     found = True
                     break
 
             if found:
-                break
+                break 
     
             else:
                 print("Try again - note that you cannot pass")
@@ -275,13 +290,14 @@ class Game:
                 break
 
 
-
+#creates a "game" 
 game = Game()
 
 
 #that's me!
 game.typeout("Hello, this is UNO made by dario!")
 print("-------------------------------")
+
 
 #generate cards
 for loop in range(7):
@@ -303,20 +319,23 @@ game.typeout(f"the {starts} is starting!")
 #uses correct function depending
 if starts == "bot":
     game.bot_starts()
-    game.lp = "bot"
+    game.lp = "bot" #last player was bot
 
 else:
     game.player_starts()
-    game.lp = "player"
+    game.lp = "player" #last player was the playter
 
 
-
+#general loop of game
 while len(Card.player_cards) != 0 and len(Card.bot_cards) != 0:
     game.play()
 
+#user wins
 if len(Card.player_cards) == 0:
     print("-------------------------------")
     print("You win!")
+
+#bot wins
 else:
     print("-------------------------------")
     print("The bot wins!")
